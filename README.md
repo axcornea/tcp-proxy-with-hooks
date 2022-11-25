@@ -1,22 +1,32 @@
 # Wake up VMs by TCP requests
 
-This simple tool supports setups where you have an expensive server (VM) that is running 24/7, but actually serves requests only at some period of time, and scheduled boot policies doesn't work. It is designed for the TCP applications like legacy server apps, game servers, anm others.
+This simple tool supports setups where you have an expensive server (VM) that is running 24/7, but actually serves requests only at some portions of time, and scheduled boot policies as well as other methods don't work. It is designed for the TCP applications like legacy server apps, game servers, and others.
 
-> If you have an HTTP application that you want to be auto started/stopped based on HTTP requests - _GCP AppEngine_ or a similar service will do a better job.
+> If you have an HTTP application that you want to be auto started/stopped based on incoming HTTP requests - _GCP AppEngine_ or a similar service will do a better job.
 
 # Design
 
-This tool is a TCP proxy server that intercepts all requests to your _target_ server. In case if the server is not reachable - it tries first to start the target server using the "start" hook (a script provided by the end user, dependend on their specific use cases). If server successfully starts - it forwards all the traffic between client and the target. After all the clients have disconnected, it waits for a period of time and then shuts down the target server using another - "stop" hook script.
+This tool is a TCP proxy server that intercepts all requests to your _target_ server. In case if the server is not reachable - it attempts at first to start the target server using the `start` hook (a script provided by the end user, dependend on their specific use cases). If server successfully starts - it forwards all the traffic between clients and the target. After all the clients have disconnected, it awaits a period of time and then shuts down the target server using the `stop` hook.
 
 Below are the diagrams with a visual representation of this process.
 
 ### Case 1. Target server is alive when request arrives
 
-<img src="docs/proxy_arch_when_target_alive.png" style="height: 300px">
+<p align="center">
+    <img src="docs/proxy_arch_when_target_alive.png" style="height: 250px">
+</p>
 
 ### Case 2. Target server is dead when request arrives
 
-<img src="docs/proxy_arch_when_target_dead.png" style="height: 300px">
+<p align="center">
+    <img src="docs/proxy_arch_when_target_dead.png" style="height: 300px">
+</p>
+
+### Case 3. Clients are disconnecting
+
+<p align="center">
+    <img src="docs/proxy_arch_when_clients_disconnecting.png" style="height: 300px">
+</p>
 
 # How to set up
 
@@ -24,13 +34,15 @@ Below are the diagrams with a visual representation of this process.
 
 ### 1. Create your `start` and `stop` hook
 
-Start hook is a script that starts your application. In example, it can spin up a Docker container, or make a call to the cloud platform to start a VM. Take a look at the provided examples in the `examples/` folder.
+_Start hook_ is a script that starts your application. In example, it can spin up a Docker container, or make a call to the cloud platform to start a VM. Take a look at the provided examples in the `examples/` folder.
 
-For the next steps let's assume they are located in the same directory and named `start.sh` and `stop.sh`.
+_Stop hook_ does the opposite - it stops the application server by any means.
+
+For the next steps let's assume the hooks are located in the same directory and named `start.sh` and `stop.sh`.
 
 ### 2. Run proxy server
 
-Here we are demonstrating how to run it locally, but usually it is better to wrap it into a systemd or other service supervisor.
+> Better wrap it into a Docker container or a systemd unit if using in production.
 
 ```bash
 server.py \
@@ -41,7 +53,7 @@ server.py \
     --cooldown-period=60
 ```
 
-That's all, it is running.
+That's all, it is running and forwarding your traffic to the target app.
 
 # Things to consider
 
