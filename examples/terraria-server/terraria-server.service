@@ -1,0 +1,14 @@
+[Unit]
+Description=Service for starting Terraria server
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/tmux new-session -d -s terraria_server -c /home/terraria/terraria-server/ "./start_server.sh"
+ExecStop=/usr/bin/tmux send-keys -t terraria_server "exit" ENTER
+KillMode=none
+User=terraria
+Group=terraria
+
+[Install]
+WantedBy=multi-user.target
